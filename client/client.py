@@ -2,7 +2,8 @@ from udp.utils import *
 
 PREFIX = 'received_from_server_'
 test_folder = '../test_files/'
-test_files = ['teste1.txt', 'teste2.txt', 'teste3.jpg', 'teste4.txt']
+# test_files = ['teste1.txt', 'teste2.txt', 'teste3.jpg', 'teste4.txt']
+test_files = ['teste6.mp3']
 
 
 def main():
