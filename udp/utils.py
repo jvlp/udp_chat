@@ -1,8 +1,8 @@
-# Envia um arquivo para outro socket udp
 from socket import *
 from typing import Tuple, TypeAlias
 
-# constantes
+from udp.filehandler import load_file, write_file
+
 HOST = '127.0.0.1'
 BUFFER = 2048
 CLIENT_PORT = 3000
@@ -19,28 +19,33 @@ def create_udp_socket(addr: Address) -> socket:
     return udp_socket
 
 
-def send_file(udp_socket: socket, file_name: str, addr: Address, buffer_size: int = 2048) -> None:
+def send_file(udp_socket: socket, file_path: str, addr: Address, prefix: str = '', buffer_size: int = 2048) -> None:
+    file_name = file_path.split('/')[-1]
     print(f'\nPreparing to send {file_name}')
-    with open(file_name, 'rb') as f:
-        data = f.read(buffer_size)
-        while(data):
-            print(f'Uploading {file_name}...')
-            if(udp_socket.sendto(data, addr)):
-                data = f.read(buffer_size)
+    data = load_file(prefix+file_path, buffer_size)
+    metadata = file_name + ':' + str(len(data))
+
+    udp_socket.sendto(metadata.encode(), addr)
+    for seg, pkt in enumerate(data):
+        print(f'[{seg + 1}/{len(data)}] Uploading {file_name}...')
+        udp_socket.sendto(pkt, addr)
     print(f'--------------- Finished! ---------------\n')
 
 
-def recv_file(udp_socket: socket, file_name: str, buffer_size: int = 2048) -> None:
-    print(f'\nPreparing to recieve {file_name} \n')
-    with open(file_name, 'wb') as f:
+def recv_file(udp_socket: socket, prefix: str = '',  buffer_size: int = 2048) -> Tuple[str, Address]:
+    metadata, addr = udp_socket.recvfrom(BUFFER)
+    file_name, num_of_pkt = metadata.decode().split(':')
+    num_of_pkt = int(num_of_pkt)
+    print(f'\nPreparing to receive {file_name} \n')
+
+    file = list()
+
+    for seg in range(0, num_of_pkt):
+        print(f'[{seg + 1}/{num_of_pkt}] Downloading {file_name}...')
         data, _ = udp_socket.recvfrom(buffer_size)
-        try:
-            while(data):
-                print(f'Downloading {file_name}...')
-                f.write(data)
-                udp_socket.settimeout(2)
-                data, _ = udp_socket.recvfrom(buffer_size)
-        except timeout:
-            print(f'{file_name} Downloaded')
-            udp_socket.settimeout(None)
+        file.append(data)
+    print(f'{file_name} Downloaded')
+    write_file(file, prefix+file_name)
     print(f'---------------- Finished! ----------------\n')
+
+    return file_name, addr
