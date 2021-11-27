@@ -44,8 +44,7 @@ def wait_for_ack(udp_socket: socket, seg: int, buffer_size: int = 2048) -> bool:
         # print(ack_msg)
         ack_seg = int(ack_msg.decode())
         # print(ack_seg)
-        if ack_seg == seg:
-            return True
+        return ack_seg == seg
 
 
 def check_ack(data: bytes, seg: int) -> bool:
@@ -74,12 +73,12 @@ def send_file(udp_socket: socket, file_path: str, addr: Address, prefix: str = '
 
     udp_socket.sendto(metadata.encode(), addr)
     for seg, pkt in enumerate(data):
-        print(
-            f'[{str(seg + 1).zfill(len(num_of_pkt))}/{num_of_pkt}] Uploading {file_name}...')
+        pkt_counter = f'[{str(seg + 1).zfill(len(num_of_pkt))}/{num_of_pkt}]'
+        print(f'{pkt_counter} Uploading {file_name}...')
         ack_received = False
         while not ack_received:
             udp_socket.sendto(checksum(pkt) + str(seg % 2).encode() + pkt, addr)
-            ack_received = wait_for_ack(udp_socket, seg)
+            ack_received = wait_for_ack(udp_socket, seg, buffer_size)
     udp_socket.settimeout(None)
     print(f'--------------- Finished! ---------------\n')
 
@@ -93,8 +92,8 @@ def recv_file(udp_socket: socket, prefix: str = '',  buffer_size: int = 2048) ->
     file = list()
 
     for seg in range(0, num_of_pkt):
-        print(
-            f'[{str(seg + 1).zfill(len(str(num_of_pkt)))}/{num_of_pkt}] Downloading {file_name}...')
+        pkt_counter = f'[{str(seg + 1).zfill(len(str(num_of_pkt)))}/{num_of_pkt}]'
+        print(f'{pkt_counter} Downloading {file_name}...')
         data, _ = udp_socket.recvfrom(buffer_size)
         if check_ack(data, seg):
             data = data[17:]
