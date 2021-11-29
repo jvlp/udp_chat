@@ -1,15 +1,14 @@
-from udp.utils import *
+from pathlib import Path
+
+from rdt.udp import *
 
 PREFIX = 'received_from_server_'
-test_folder = '../test_files/'
-test_files = ['teste1.txt', 'teste2.txt', 'teste3.jpg', 'teste4.txt', 'teste5.jpg', 'teste6.mp3']
-
+test_folder = Path('../test_files/')
 
 def main():
     udp_socket = create_udp_socket(client_addr)
-    for file_name in test_files:
-
-        send_file(udp_socket, test_folder + file_name, server_addr)
+    for file in test_folder.iterdir():
+        send_file(udp_socket, str(file.as_posix()), server_addr)
         recv_file(udp_socket, PREFIX)
 
     udp_socket.close()

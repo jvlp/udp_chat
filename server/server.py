@@ -1,4 +1,4 @@
-from udp.utils import *
+from rdt.udp import *
 
 PREFIX = 'received_from_client_'
 
